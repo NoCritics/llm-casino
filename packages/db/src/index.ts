@@ -15,3 +15,5 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export type { PrismaClient };
+export { selftest } from './selftest';
+export type { SelftestResult } from './selftest';
