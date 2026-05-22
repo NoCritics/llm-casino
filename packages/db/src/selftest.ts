@@ -6,9 +6,9 @@ export interface SelftestResult {
 }
 
 export async function selftest(): Promise<SelftestResult> {
-  const rows = await prisma.$queryRawUnsafe<{ tablename: string }[]>(
-    `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`,
-  );
+  const rows = await prisma.$queryRaw<{ tablename: string }[]>`
+    SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename
+  `;
 
   return {
     connected: true,

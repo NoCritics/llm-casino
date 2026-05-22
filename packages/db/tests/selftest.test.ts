@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import { selftest } from '../src/selftest';
+import { prisma } from '../src/index';
+
+afterAll(async () => {
+  await prisma.$disconnect();
+});
 
 describe('db selftest', () => {
   it('reports the expected V1 tables as present', async () => {
