@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint'",
     "test": "vitest run",
-    "prisma": "prisma"
+    "prisma": "prisma",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0"
