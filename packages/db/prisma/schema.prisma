@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Product state ---
+
+enum PersonaKind {
+  whale
+  grinder
+  casual
+  refund_seeker
+  bonus_abuser
+  lurker
+  human_observer
+}
+
+model Player {
+  id          String          @id @default(cuid())
+  personaKind PersonaKind
+  balance     BigInt          @default(0)
+  createdAt   DateTime        @default(now())
+  frozen      Boolean         @default(false)
+  flags       Json            @default("{}")
+  bets        Bet[]
+  tickets     SupportTicket[]
+}
+
+model Game {
+  id         String   @id
+  kind       String
+  version    Int      @default(1)
+  mathConfig Json     @default("{}")
+  deployedAt DateTime @default(now())
+  bets       Bet[]
+}
+
+model Bet {
+  id        String   @id @default(cuid())
+  playerId  String
+  gameId    String
+  stake     BigInt
+  outcome   Json
+  payout    BigInt
+  rngSeed   String
+  settledAt DateTime @default(now())
+  player    Player   @relation(fields: [playerId], references: [id])
+  game      Game     @relation(fields: [gameId], references: [id])
+
+  @@index([gameId, settledAt])
+  @@index([playerId, settledAt])
+}
+
+enum WalletKind {
+  operating
+  payout_reserve
+  marketing_pool
+  runway
+}
+
+model TreasuryWallet {
+  name     String         @id
+  kind     WalletKind
+  balance  BigInt         @default(0)
+  movesOut TreasuryMove[] @relation("MoveFrom")
+  movesIn  TreasuryMove[] @relation("MoveTo")
+}
+
+model TreasuryMove {
+  id         String         @id @default(cuid())
+  fromWallet String
+  toWallet   String
+  amount     BigInt
+  reason     String
+  byRole     String
+  at         DateTime       @default(now())
+  from       TreasuryWallet @relation("MoveFrom", fields: [fromWallet], references: [name])
+  to         TreasuryWallet @relation("MoveTo", fields: [toWallet], references: [name])
+
+  @@index([at])
+}
+
+model Campaign {
+  id        String    @id @default(cuid())
+  channel   String
+  audience  Json      @default("{}")
+  budget    BigInt
+  copy      String
+  status    String
+  byRole    String    @default("CMO")
+  createdAt DateTime  @default(now())
+  endsAt    DateTime?
+
+  @@index([status, channel])
+}
+
+model SupportTicket {
+  id            String   @id @default(cuid())
+  playerId      String
+  body          String
+  status        String   @default("open")
+  repliedByRole String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  player        Player   @relation(fields: [playerId], references: [id])
+
+  @@index([status])
+}
+
+// --- Org nervous system ---
+
+enum MessagePriority {
+  low
+  normal
+  high
+  urgent
+}
+
+model Message {
+  id          String          @id @default(cuid())
+  fromRole    String
+  toRole      String
+  subject     String
+  bodyMd      String
+  refsMdPaths String[]        @default([])
+  threadId    String?
+  repliedToId String?
+  priority    MessagePriority @default(normal)
+  sentAt      DateTime        @default(now())
+  readAt      DateTime?
+  repliedAt   DateTime?
+
+  @@index([toRole, readAt])
+  @@index([threadId])
+}
+
+enum EventSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+model Event {
+  id              String        @id @default(cuid())
+  type            String
+  source          String
+  payload         Json          @default("{}")
+  severity        EventSeverity @default(low)
+  createdAt       DateTime      @default(now())
+  processedByRole String?
+  processedAt     DateTime?
+
+  @@index([type, createdAt])
+  @@index([severity, processedAt])
+}
+
+model AgentRun {
+  id                String    @id @default(cuid())
+  role              String
+  reason            String
+  wakePacketSummary Json      @default("{}")
+  startedAt         DateTime  @default(now())
+  endedAt           DateTime?
+  tokensIn          Int       @default(0)
+  tokensOut         Int       @default(0)
+  toolCalls         Json      @default("[]")
+  outcome           String?
+
+  @@index([role, startedAt])
+}
+
+model PauseFlag {
+  scope  String   @id
+  paused Boolean  @default(false)
+  reason String?
+  setBy  String?
+  at     DateTime @default(now())
+}

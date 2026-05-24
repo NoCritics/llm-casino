@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prisma generate (no DB connection required)
+        run: pnpm --filter @casino/db prisma generate
+
+      - name: Prisma validate
+        run: pnpm --filter @casino/db prisma validate
+
+      - run: pnpm typecheck
+
+      - run: pnpm lint
+
+      - run: pnpm build
